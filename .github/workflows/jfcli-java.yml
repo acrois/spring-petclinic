@@ -1,6 +1,14 @@
 # This workflow will build a Java project with Maven, using the JFrog CLI to upload to Artifactory
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
+## Configuration available:
+# JF_URL or JF_NAME (jfrog.io subdomain) [the JF_URL takes precedence and can be secret]
+# JF_PROJECT [can be secret]
+# MAVEN_REPOSITORY [can be secret]
+# JF_OIDC_PROVIDER [can be secret]
+# JFROG_CLI_LOG_LEVEL
+# JFROG_CLI_VERSION
+
 name: "Maven - Build using JFrog CLI"
 on:
   push:
@@ -28,13 +36,13 @@ permissions:
   security-events: write # Required for uploading code scanning.
 env:
   JAVA_PROVIDER: 'corretto'
-  MAVEN_REPOSITORY: ${{ vars.MAVEN_REPOSITORY || "maven-virtual" }}
-  JF_URL: ${{ vars.JF_URL || "https://${{ vars.JF_NAME }}.jfrog.io" }}
-  JF_PROJECT: ${{ vars.JF_PROJECT || "" }}
-  JF_OIDC_PROVIDER: ${{ vars.JF_OIDC_PROVIDER || "" }}
+  MAVEN_REPOSITORY: ${{ secrets.MAVEN_REPOSITORY || vars.MAVEN_REPOSITORY || "maven-virtual" }}
+  JF_URL: ${{ secrets.JF_URL || vars.JF_URL || "https://${{ vars.JF_NAME }}.jfrog.io" }}
+  JF_PROJECT: ${{ secrets.JF_PROJECT || vars.JF_PROJECT || "" }}
+  JF_OIDC_PROVIDER: ${{ secrets.JF_OIDC_PROVIDER || vars.JF_OIDC_PROVIDER || "" }}
   JFROG_CLI_VERSION: ${{ vars.JFROG_CLI_VERSION || "latest" }}
   JFROG_CLI_LOG_TIMESTAMP: DATE_AND_TIME
-  JFROG_CLI_LOG_LEVEL: DEBUG # DEBUG, INFO, WARN, ERROR
+  JFROG_CLI_LOG_LEVEL: ${{ vars.JFROG_CLI_LOG_LEVEL || "INFO" }} # DEBUG, INFO, WARN, ERROR
   # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#github-context
   # JFROG_CLI_BUILD_ID: "${{github.actor}}-${{github.run_number}}"
   # JFROG_CLI_BUILD_NAME: ${{ github.repository }}
@@ -57,12 +65,13 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          # JFROG_CLI_RELEASES_REPO: '${{env.JF_RT_URL}}/artifactory/${{env.RT_REPO_MVN_VIRTUAL}}' 
-          # JFROG_CLI_EXTRACTORS_REMOTE: '${{env.JF_RT_URL}}/artifactory/${{env.RT_REPO_MVN_VIRTUAL}}'
+          # JFROG_CLI_RELEASES_REPO: '${{env.JF_URL}}/artifactory/${{env.MAVEN_REPOSITORY}}' 
+          # JFROG_CLI_EXTRACTORS_REMOTE: '${{env.JF_URL}}/artifactory/${{env.MAVEN_REPOSITORY}}'
           JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: ${{ env.JFROG_CLI_VERSION }}
           oidc-provider-name: ${{ env.JF_OIDC_PROVIDER }}
+          # download-repository: jfrog-cli-remote
 
       # https://github.com/actions/checkout
       - name: Clone Repository
@@ -91,7 +100,7 @@ jobs:
         run: jf rt ping
 
       - name: Configure Maven to Resolve
-        run: jf mvnc --global --repo-resolve-releases "$RT_REPO_MVN_VIRTUAL" --repo-resolve-snapshots "$RT_REPO_MVN_VIRTUAL"
+        run: jf mvnc --global --repo-resolve-releases "$MAVEN_REPOSITORY" --repo-resolve-snapshots "$MAVEN_REPOSITORY"
       
       - name: Maven Clean and Install
         run: jf mvn clean install -DskipTests=true -Denforcer.skip=true
