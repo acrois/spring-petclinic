@@ -11,6 +11,7 @@
 
 name: "Maven - Build using JFrog CLI"
 on:
+  workflow_run:
   push:
     branches:
       - main
@@ -107,3 +108,6 @@ jobs:
 
       - name: List Contents
         run: pwd; ls -lhat .
+
+      # - name: Publish
+      #   run: jf mvn publish
