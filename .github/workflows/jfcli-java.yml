@@ -46,7 +46,9 @@ env:
   JFROG_CLI_LOG_LEVEL: ${{ vars.JFROG_CLI_LOG_LEVEL || 'INFO' }} # DEBUG, INFO, WARN, ERROR
   # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#github-context
   JFROG_CLI_BUILD_ID: ${{ github.run_number }}
-  JFROG_CLI_BUILD_NAME: "${{ github.repository }} - ${{github.actor}}"
+  JFROG_CLI_BUILD_NAME: "${{ github.repository }}"
+  # JFROG_CLI_RELEASES_REPO: '${{env.JF_URL}}/artifactory/${{env.MAVEN_REPOSITORY}}' 
+  # JFROG_CLI_EXTRACTORS_REMOTE: '${{env.JF_URL}}/artifactory/${{env.MAVEN_REPOSITORY}}'
 jobs:
   mavenPackage:
     name: "Maven Build & Deploy"
@@ -66,8 +68,6 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          # JFROG_CLI_RELEASES_REPO: '${{env.JF_URL}}/artifactory/${{env.MAVEN_REPOSITORY}}' 
-          # JFROG_CLI_EXTRACTORS_REMOTE: '${{env.JF_URL}}/artifactory/${{env.MAVEN_REPOSITORY}}'
           JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: ${{ env.JFROG_CLI_VERSION }}
